@@ -1,9 +1,10 @@
-// main.go
 package main
 
 import (
 	"log"
-	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/songgao/water"
 )
@@ -14,6 +15,16 @@ const (
 )
 
 func main() {
+	sigs := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		done <- true
+	}()
+
 	config := water.Config{
 		DeviceType: water.TUN,
 	}
@@ -27,6 +38,6 @@ func main() {
 	defer inf.Close()
 
 	log.Printf("tunnel created with name: %s", inf.Name())
-
-	time.Sleep(10 * time.Minute)
+	<-done
+	log.Println("Exiting....")
 }
